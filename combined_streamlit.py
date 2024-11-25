@@ -255,43 +255,39 @@ def render_main_content():
 
     # Generation Section
     st.markdown("### Generate Audio")
-    generate_col1, generate_col2 = st.columns([2, 1])
 
-    with generate_col1:
-        if st.button("🎵 Generate Voice", use_container_width=True, type="primary"):
-            if st.session_state.model is None:
-                st.warning("⚠️ Please load the model first!")
-            else:
-                try:
-                    audio_array = generate_audio(
-                        input_text,
-                        voice_description,
-                        st.session_state.model,
-                        st.session_state.tokenizer,
-                        st.session_state.current_model_type
-                    )
+    if st.button("🎵 Generate Voice", use_container_width=True, type="primary"):
+        if st.session_state.model is None:
+            st.warning("⚠️ Please load the model first!")
+        else:
+            try:
+                audio_array = generate_audio(
+                    input_text,
+                    voice_description,
+                    st.session_state.model,
+                    st.session_state.tokenizer,
+                    st.session_state.current_model_type
+                )
+                # Save audio
+                output_path = f'generated_audio_{st.session_state.generation_count}.wav'
+                sf.write(output_path, audio_array.astype(np.float32), st.session_state.model.config.sampling_rate)
+                    
+                # Update state
+                st.session_state.last_generated_audio = output_path
+                st.session_state.generation_count += 1
+                
+                # Add to history
+                st.session_state.history.append({
+                    'text': input_text,
+                    'model_type': st.session_state.current_model_type,                        'emotion': st.session_state.selected_emotion if st.session_state.current_model_type == "Emotions" else None,
+                    'file_path': output_path,
+                    'timestamp': datetime.now()
+                })
 
-                    # Save audio
-                    output_path = f'generated_audio_{st.session_state.generation_count}.wav'
-                    sf.write(output_path, audio_array.astype(np.float32), st.session_state.model.config.sampling_rate)
+                st.success("✅ Generation successful!")
 
-                    # Update state
-                    st.session_state.last_generated_audio = output_path
-                    st.session_state.generation_count += 1
-
-                    # Add to history
-                    st.session_state.history.append({
-                        'text': input_text,
-                        'model_type': st.session_state.current_model_type,
-                        'emotion': st.session_state.selected_emotion if st.session_state.current_model_type == "Emotions" else None,
-                        'file_path': output_path,
-                        'timestamp': datetime.now()
-                    })
-
-                    st.success("✅ Generation successful!")
-
-                except Exception as e:
-                    st.error(f"Generation failed: {str(e)}")
+            except Exception as e:
+                st.error(f"Generation failed: {str(e)}")
 
     # Display last generated audio
     if st.session_state.last_generated_audio and os.path.exists(st.session_state.last_generated_audio):
