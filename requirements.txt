@@ -6,7 +6,7 @@ transformers
 soundfile
 numpy
 pandas 
-numba    
+numba>=0.55.0
 torchaudio
 flash-attention
 librosa 
