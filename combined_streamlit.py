@@ -231,82 +231,50 @@ def render_main_content():
             height=150
         )
 
-    with voice_tab:
-        col1, col2 = st.columns([1, 1])
-
-        with col1:
-            if st.session_state.current_model_type == "Emotions":
-                selected_emotion = st.selectbox(
-                    "Select Emotion",
-                    list(EMOTION_DESCRIPTIONS.keys()),
-                    index=list(EMOTION_DESCRIPTIONS.keys()).index(st.session_state.selected_emotion)
-                )
-                st.session_state.selected_emotion = selected_emotion
-                default_description = EMOTION_DESCRIPTIONS[selected_emotion]
-            else:
-                default_description = MODEL_CONFIGS[st.session_state.current_model_type]["default_description"]
-
-        with col2:
-            voice_description = st.text_area(
-                "Voice Description",
-                value=default_description,
-                height=150
+        with voice_tab:
+            st.markdown("#### Choose Emotion")
+            selected_emotion = st.selectbox(
+                "Emotion style",
+                list(EMOTION_DESCRIPTIONS.keys()),
+                index=list(EMOTION_DESCRIPTIONS.keys()).index("default")
             )
+            st.session_state.selected_emotion = selected_emotion
+            st.markdown(f"**Description:** {EMOTION_DESCRIPTIONS[selected_emotion]}")
 
-    # Generation Section
-    st.markdown("### Generate Audio")
+            st.markdown("#### Adjust Speech Rate")
+            speech_rate = st.slider("Speech rate (1.0 = normal speed)", min_value=0.5, max_value=2.0, value=1.0)
 
-    if st.button("🎵 Generate Voice", use_container_width=True, type="primary"):
-        if st.session_state.model is None:
-            st.warning("⚠️ Please load the model first!")
-        else:
-            try:
+    # Generate Section
+    st.markdown("### Generate and Playback")
+    if st.session_state.model_loading_state != 'loaded':
+        st.warning("Please load the model first to enable generation.")
+    else:
+        if st.button("Generate Audio"):
+            with st.spinner("Generating audio..."):
                 audio_array = generate_audio(
                     input_text,
-                    voice_description,
+                    EMOTION_DESCRIPTIONS[selected_emotion],
                     st.session_state.model,
                     st.session_state.tokenizer,
                     st.session_state.current_model_type
                 )
-                # Save audio
-                output_path = f'generated_audio_{st.session_state.generation_count}.wav'
-                sf.write(output_path, audio_array.astype(np.float32), st.session_state.model.config.sampling_rate)
-                    
-                # Update state
-                st.session_state.last_generated_audio = output_path
-                st.session_state.generation_count += 1
-                
-                # Add to history
-                st.session_state.history.append({
-                    'text': input_text,
-                    'model_type': st.session_state.current_model_type,                        'emotion': st.session_state.selected_emotion if st.session_state.current_model_type == "Emotions" else None,
-                    'file_path': output_path,
-                    'timestamp': datetime.now()
-                })
 
-                st.success("✅ Generation successful!")
+                # Save and render audio
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                audio_filename = f"generated_audio_{timestamp}.wav"
+                sf.write(audio_filename, audio_array, samplerate=22050)  # Assuming 22.05 kHz sample rate
 
-            except Exception as e:
-                st.error(f"Generation failed: {str(e)}")
+                st.audio(audio_filename)
+                st.success("Audio generation complete!")
 
-    # Display last generated audio
-    if st.session_state.last_generated_audio and os.path.exists(st.session_state.last_generated_audio):
-        st.markdown("### 🎧 Generated Audio")
-        audio_col, download_col = st.columns([3, 1])
-
-        with audio_col:
-            st.audio(st.session_state.last_generated_audio)
-
-        with download_col:
-            with open(st.session_state.last_generated_audio, 'rb') as f:
-                st.download_button(
-                    "📥 Download",
-                    data=f,
-                    file_name=f"voice_{st.session_state.current_model_type.lower()}_{st.session_state.generation_count}.wav",
-                    mime="audio/wav",
-                    use_container_width=True
-                )
-
+                # Provide download link
+                with open(audio_filename, "rb") as file:
+                    st.download_button(
+                        label="Download Audio",
+                        data=file,
+                        file_name=audio_filename,
+                        mime="audio/wav"
+                    )
 
 def render_history():
     """Render the history page"""
@@ -343,7 +311,6 @@ def render_history():
 
 def main():
     """Main application function"""
-
     init_session_state()
 
     # Navigation
