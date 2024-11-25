@@ -6,3 +6,4 @@ transformers
 soundfile
 numpy
 pandas
+llvmlite
