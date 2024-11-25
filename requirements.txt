@@ -7,3 +7,4 @@ soundfile
 numpy
 pandas
 llvmlite
+numba==0.47.0
