@@ -70,7 +70,7 @@ MODEL_CONFIGS = {
         "default_description": EMOTION_DESCRIPTIONS["default"]
     }
 }
-
+'''
 # Enhanced CSS styling
 st.markdown("""
     <style>
@@ -216,7 +216,7 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
-
+'''
 def init_session_state():
     """Initialize all session state variables"""
     defaults = {
